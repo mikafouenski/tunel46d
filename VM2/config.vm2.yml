@@ -1,0 +1,39 @@
+
+# avec sudo ansible-playbook -c local config.vm2.yml
+---
+- hosts: localhost
+  tasks:
+
+    # adresse IPv4 avec nmcli (CLI pour NetworkManager)
+    # NB ces configurations sont automatiquement appliquées
+    ###############################################################
+    # suppression route par défaut (de vagrant)
+    - shell: ip route del default
+    #  ignore_errors: True # permet à ansible de continuer
+
+    # Suppression de la connexion par défaut
+    - shell: nmcli connection del "Connexion filaire 1"
+    #- shell: nmcli connection del "Connexion filaire 2"
+    # Facultatif, pour supprimer une connexion déjà configurée, faire
+    - shell: nmcli connection del ansible-eth1
+      ignore_errors: True # permet à ansible de continuer
+    # Facultatif, pour supprimer une connexion déjà configurée, faire
+    - shell: nmcli connection del ansible-eth2
+      ignore_errors: True # permet à ansible de continuer
+
+    # Paramètres réseaux pour VM2
+    # ifname (interface réseau) : eth1
+    # con-name (nom de la connexion dans NM) : ansible-eth1
+    # type : ethernet
+    # ip4 (adresse/prefixe IPv4) : 172.16.2.132/28
+    - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip4 172.16.2.132/28
+    # ifname (interface réseau) : eth2
+    # con-name (nom de la connexion dans NM) : ansible-eth2
+    # type : ethernet
+    # ip4 (adresse/prefixe IPv4) : 172.16.2.162/28
+    - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip4 172.16.2.162/28
+
+     # Set ip forwarding on in /proc and in the sysctl file and reload if necessary
+    - sysctl: name="net.ipv4.ip_forward" value=1 sysctl_set=yes state=present reload=yes
+
+
