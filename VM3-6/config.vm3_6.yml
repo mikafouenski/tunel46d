@@ -21,7 +21,8 @@
     # ifname (interface réseau) : eth1
     # con-name (nom de la connexion dans NM) : ansible-eth1
     # type : ethernet
-    # ip4 (adresse/prefixe IPv4) : 172.16.2.131
-    # gw4 (adresse passerelle IPv4) : 172.16.2.132
-    - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip4 172.16.2.131/28 gw4 172.16.2.132
+    # ip4 (adresse/prefixe IPv4) : 172.16.2.186
+    # gw4 (adresse passerelle IPv4) : ???
+    - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip4 172.16.2.186/28 gw4 172.16.2.183/28
 
+    - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip6 fc00:1234:2::36/64 gw6 fc00:1234:2::26/64 
