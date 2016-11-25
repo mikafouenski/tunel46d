@@ -36,7 +36,8 @@ int main (int argc, char** argv){
     return 1;
   }
   int fd = tun_alloc(argv[1]);
-  sleep(1024);
+  printf("Press Any Key to Continue\n");
+  getchar();
   close(fd);
   return 0;
 }
