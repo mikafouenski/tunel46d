@@ -9,12 +9,15 @@
     ###############################################################
     # suppression route par défaut (de vagrant)
     - shell: ip route del default
-    #  ignore_errors: True # permet à ansible de continuer
+      ignore_errors: True # permet à ansible de continuer
 
     # Suppression de la connexion par défaut
     - shell: nmcli connection del "Connexion filaire 1"
+      ignore_errors: True # permet à ansible de continuer
     # Facultatif, pour supprimer une connexion déjà configurée, faire
     - shell: nmcli connection del ansible-eth1
+      ignore_errors: True # permet à ansible de continuer
+    - shell: nmcli connection del ansible-eth2
       ignore_errors: True # permet à ansible de continuer
 
     # Paramètres réseaux pour VM1
@@ -22,7 +25,9 @@
     # con-name (nom de la connexion dans NM) : ansible-eth1
     # type : ethernet
     # ip4 (adresse/prefixe IPv6) : fc00:1234:1::26
-    # gw4 (adresse passerelle IPv4) : 
-    - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip6 fc00:1234:1::26/64
+    # gw4 (adresse passerelle IPv4) :
+    - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip6 fc00:1234:1::26/64 gw6 fc00:1234:1::16
 
-    - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip6 fc00:1234:2::26/64
+    - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip6 fc00:1234:2::26/64 gw6 fc00:1234:2::36
+
+    - shell: sysctl -w net.ipv6.conf.all.fowarding=1
