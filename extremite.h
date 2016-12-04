@@ -10,7 +10,9 @@
 #include <netdb.h>
 #include <errno.h>
 
+#define BUFFSIZE 4096
+
 int ext_out(char* port);
-int ext_in();
+int ext_in(char* hote, char* port, int tun);
 
 #endif

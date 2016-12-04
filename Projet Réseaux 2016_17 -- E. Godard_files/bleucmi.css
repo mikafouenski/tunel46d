@@ -1,0 +1,59 @@
+// couleurs CMI : bleu et blanc
+body {
+    background-color: white;
+    font-family: arial, helvetica;
+}
+
+u {
+    color: #900;
+}
+
+small {
+    color: #ccc;
+}
+
+a {
+    text-decoration: none;
+    color: #00a;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #00f;
+}
+
+pre {
+  background-color: #d8ecec;
+}
+
+.nav ul{
+    color: #396aaf;
+}
+
+.main {
+    color: #396aaf;
+}
+
+.main h1 {
+    border-color: #396aaf #fff #396aaf #fff;
+}
+
+#titre {
+    color: #396aaf;
+}
+
+#barre {
+    border-color: #fff #396aaf #fff #fff;
+    background-color: white;
+}
+
+#bas {
+    background-color:white;
+}
+
+#modif {
+    border-color: #396aaf;
+    background-color: white;
+    color: #396aaf;
+}
+

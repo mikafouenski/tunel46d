@@ -7,7 +7,7 @@ int ext_out(char* port) {
                              PF_INET,SOCK_STREAM,0, /* IP mode connecté */
                              0,NULL,NULL,NULL};
     struct sockaddr_in address;
-    char buffer[1024];
+    char buffer[BUFFSIZE];
 
     // récupérer les infos
     fprintf(stderr,"Ecoute sur le port %s\n", port);
@@ -54,28 +54,23 @@ int ext_out(char* port) {
             perror("accept");
             return (EXIT_FAILURE);
         }
-        do {
-            nb_read = recv(new_soc, buffer, 1024, 0);
-            if (nb_read <= 0) break;
-            //  buffer[nb_read] = '\0';
-            fprintf(stderr, "%s\n", buffer);
-        } while (42);
+        while (42) {
+            nb_read = read(new_soc, buffer, BUFFSIZE);
+            write(1, buffer, nb_read);
+        }
     }
     return -1;
 }
 
-int ext_in(char* port, int tun) {
-int srv_soc;
+int ext_in(char* hote, char* port, int tun) {
+    int srv_soc;
     struct addrinfo * resol; /* résolution */
-    struct addrinfo indic = {AI_PASSIVE, /* Toute interface */
-                             PF_INET,SOCK_STREAM,0, /* IP mode connecté */
-                             0,NULL,NULL,NULL};
     struct sockaddr_in address;
-    char buffer[1024];
+    char buffer[BUFFSIZE];
 
     // récupérer les infos
     fprintf(stderr,"Ecoute sur le port %s\n", port);
-    int err = getaddrinfo(NULL, port, &indic, &resol);
+    int err = getaddrinfo(hote, port, NULL, &resol);
     if (err < 0){
         fprintf(stderr, "Résolution: %s\n", gai_strerror(err));
         return (EXIT_FAILURE);
@@ -97,14 +92,22 @@ int srv_soc;
     fprintf(stderr,"connect!\n");
     int nb_read;
     while (42) {
-        nb_read = read(tun, buffer, 1024);
+        nb_read = read(tun, buffer, BUFFSIZE);
         write(srv_soc, buffer, nb_read);
     }
 }
 
 int main(int argc, char const *argv[]) {
-    printf("COUCOU\n");
-    //ext_out("1234");
-    ext_in("1234", 1);
+    if (argc < 2) {
+        printf("Tapez 1: ext_out\nTapez 2: ext_in\nSinon faites l'étoile !\n");
+        return (EXIT_SUCCESS);
+    }
+    if (atoi(argv[1]) == 1)
+        ext_out("1234");
+    else if (atoi(argv[1]) == 2)
+        ext_in("fc00:1234:2::36", "1234", 1);
+    else
+        printf("Vous avez fait l'étoile !\n");
+
     return 0;
 }
