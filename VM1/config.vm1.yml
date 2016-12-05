@@ -19,3 +19,4 @@
 
     - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip4 172.16.2.151/28 gw4 172.16.2.156
 
+    - shell: ip route add default via 172.16.2.156 dev eth2
