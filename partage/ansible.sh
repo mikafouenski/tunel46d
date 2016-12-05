@@ -2,4 +2,6 @@
 
 cd /vagrant
 
-echo "m1reseaux" | sudo -S ansible-playbook -c local config.vm*.yml
+export sudo='echo "m1reseaux" | sudo -S'
+
+sudo ansible-playbook -c local config.vm*.yml

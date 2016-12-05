@@ -1,0 +1,7 @@
+2.3)
+Le ping sur 172.16.2.1 fonctionne mais rien n’apparaît alors que sur une fausse
+adresse elle est redirigé vers tun0.
+
+2.4)
+Cette option permet d'enlever les entêtes ethernet.
+

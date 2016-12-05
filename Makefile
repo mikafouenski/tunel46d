@@ -2,5 +2,8 @@ CC = gcc
 
 all: tunalloc
 
-tunalloc: tunalloc.c
-	$(CC) -o tunalloc tunalloc.c
+extermite:
+	$(CC) -o extermite extermite.c
+
+tunalloc.o:
+	$(CC) -c tunalloc.c
