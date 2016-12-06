@@ -1,102 +1,99 @@
 #include "extremite.h"
 #include "tunalloc.h"
 
-int ext_out(char* port, int tun) {
-    int srv_soc;
-    struct addrinfo * resol; /* résolution */
-    struct addrinfo indic = {AI_PASSIVE, /* Toute interface */
-                             AF_INET6,SOCK_STREAM,0, /* IP mode connecté */
-                             0,NULL,NULL,NULL};
-    struct sockaddr_in6 address;
-    char buffer[BUFFSIZE];
-
-    // récupérer les infos
-    fprintf(stderr,"Ecoute sur le port %s\n", port);
-    int err = getaddrinfo(NULL, port, &indic, &resol);
-    if (err < 0){
-        fprintf(stderr, "Résolution: %s\n", gai_strerror(err));
-        printf("1\n");
-        return (EXIT_FAILURE);
+void recopy(int src, int dest) {
+    int nb_read;
+    char buffer[1024];
+    while(42) {
+        nb_read = read(src, buffer, 1024);
+        write(dest, buffer, nb_read);
     }
-
-    // création du la socket serveur
-    if ((srv_soc = socket(resol->ai_family, resol->ai_socktype, resol->ai_protocol)) < 0) {
-        perror("socket");
-        printf("2\n");
-        return (EXIT_FAILURE);
-    }
-    fprintf(stderr,"le n° de la socket est : %i\n", srv_soc);
-
-    // rendre la socket multi connexion
-    // int opt = 1;
-    // if (setsockopt(srv_soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof opt) < 0) {
-    //     perror("setsockopt");
-    //     return (EXIT_FAILURE);
-    // }
-    // fprintf(stderr,"Option(s) OK!\n");
-
-    // bind
-    if (bind(srv_soc, resol->ai_addr, sizeof (struct sockaddr_in6)) < 0) {
-        perror("bind");
-        printf("3\n");
-        return (EXIT_FAILURE);
-    }
-    freeaddrinfo(resol); /* /!\ Libération mémoire */
-    fprintf(stderr,"bind!\n");
-
-    // listen
-    if (listen(srv_soc, SOMAXCONN) < 0) {
-        perror("listen");
-        printf("4\n");
-        return (EXIT_FAILURE);
-    }
-    fprintf(stderr,"listen!\n");
-
-    int new_soc, nb_read;
-    while (42) {
-        int addrlen = sizeof address;
-        if ((new_soc = accept(srv_soc, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("accept");
-            return (EXIT_FAILURE);
-        }
-        recopie(new_soc, tun);
-    }
-    return -1;
 }
 
-int ext_in(char* hote, char* port, int tun) {
-    int srv_soc;
-    struct addrinfo * resol; /* résolution */
-    struct sockaddr_in6 address;
-    char buffer[BUFFSIZE];
-
-    // récupérer les infos
-    fprintf(stderr,"Ecoute sur le port %s\n", port);
-    int err = getaddrinfo(hote, port, NULL, &resol);
-    if (err < 0){
-        fprintf(stderr, "Résolution: %s\n", gai_strerror(err));
-        return (EXIT_FAILURE);
-    }
-
-    // création du la socket serveur
-    if ((srv_soc = socket(resol->ai_family, resol->ai_socktype, resol->ai_protocol)) < 0) {
+int create_socket(struct addrinfo* servinfo) {
+    int soc;
+    if ((soc = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) < 0) {
         perror("socket");
-        return (EXIT_FAILURE);
+        exit(EXIT_FAILURE);
     }
-    fprintf(stderr,"le n° de la socket est : %i\n", srv_soc);
+    printf("Created Socket.\n");
+    return soc;
+}
 
-    // connect
-    int cpt = 0;
-    while (connect(srv_soc, resol->ai_addr, sizeof (struct sockaddr_in6)) < 0) {
-        perror("connect");
-        printf("tentative %d de connexion\n", cpt++);
-        if (cpt >=  100) exit(EXIT_FAILURE);
+struct addrinfo* get_info(char* node, char* service, struct addrinfo* hints) {
+    int status;
+    struct addrinfo* servinfo;
+    if ((status = getaddrinfo(node, service, hints, &servinfo)) < 0) {
+        fprintf(stderr, "Getaddrinfo: %s...\n", gai_strerror(status));
+        exit(EXIT_FAILURE);
+    }
+    printf("Get infos.\n");
+    return servinfo;
+}
+
+void make_multi_socket(int soc) {
+    int opt = 1;
+    if (setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        perror("setsockopt");
+        exit(EXIT_FAILURE);
+    }
+    printf("Multi socket.\n");
+}
+
+void try_connect(int soc, struct sockaddr* addr, socklen_t size) {
+    int cpt = 2;
+    printf("Connect attempt: 1");
+    while (connect(soc, addr, size) < 0) {
+        printf(" %d", cpt++);
+        if (cpt > 30) {
+            fprintf(stderr, "Fail connect...\n");
+            exit(EXIT_FAILURE);
+        }
         sleep(1);
     }
-    freeaddrinfo(resol); /* /!\ Libération mémoire */
-    fprintf(stderr,"connect!\n");
-    int nb_read;
-    recopie(tun, srv_soc);
+    printf("\nConnected.\n");
+}
+
+void bind_listen(int soc, struct sockaddr* addr, socklen_t size) {
+    if (bind(soc, addr, size) < 0) {
+        perror("bind");
+        exit(EXIT_FAILURE);
+    }
+    printf("Binded.\n");
+    if (listen(soc, SOMAXCONN) < 0) {
+        perror("listen");
+        exit(EXIT_FAILURE);
+    }
+    printf("Listening.\n");
+}
+
+void ext_out(char* port, int tun) {
+    struct sockaddr_in6 address;
+    int addresslenght = sizeof address;
+    struct addrinfo indic = {
+        AI_PASSIVE, AF_INET6, SOCK_STREAM, 0, 0, NULL, NULL, NULL
+    };
+    struct addrinfo * servinfo = get_info(NULL, port, &indic);
+    int srv_soc = create_socket(servinfo);
+    // rendre la socket multi connexion
+    bind_listen(srv_soc, servinfo->ai_addr, sizeof (struct sockaddr_in6));
+    freeaddrinfo(servinfo);
+    int new_soc;
+    while (42) {
+        if ((new_soc = accept(srv_soc, (struct sockaddr*)&address, (socklen_t*)&addresslenght)) < 0) {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+        recopy(new_soc, tun);
+    }
+}
+
+void ext_in(char* hote, char* port, int tun) {
+    struct addrinfo * servinfo = get_info(hote, port, NULL);
+    int srv_soc = create_socket(servinfo);
+    try_connect(srv_soc, servinfo->ai_addr, sizeof (struct sockaddr_in6));
+    freeaddrinfo(servinfo);
+    recopy(tun, srv_soc);
 }
 
 int main(int argc, char *argv[]) {
@@ -105,9 +102,10 @@ int main(int argc, char *argv[]) {
         return (EXIT_SUCCESS);
     }
     int tun = tun_alloc(argv[1]);
-    printf("Tunnel créé.\n");
-    system("./configure-tun.sh");
-    printf("Tunnel configuré.\n");
+    printf("Created tunnel.\n");
+    system("/mnt/partage/configure-tun.sh");
+    printf("Configured tunnel.\n");
+    printf("Fork.\n");
     int pid = fork();
     if (pid < 0) {
         perror("fork");
@@ -119,16 +117,6 @@ int main(int argc, char *argv[]) {
     }
     //Le pere
     ext_out(argv[4], tun);
-
-    //     ext_out("1234", tun);
-    // } else if (atoi(argv[1]) == 2) {
-    //     int tun = tun_alloc(argv[2]);
-    //     printf("Tunnel créé.\n");
-    //     system("./configure-tun.sh");
-    //     printf("Tunnel configuré.\n");
-    //     ext_in("fc00:1234:2::36", "1234", tun);
-    // } else
-    //     printf("Vous avez fait l'étoile !\n");
 
     return 0;
 }

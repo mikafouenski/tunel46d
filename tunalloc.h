@@ -15,6 +15,4 @@
 
 int tun_alloc(char *dev);
 
-int recopie(int src, int dest);
-
 #endif

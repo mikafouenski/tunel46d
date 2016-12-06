@@ -1,15 +1,15 @@
 #include "tunalloc.h"
 
 
-int recopie(int src, int dest) {
-    int nb_read;
-    char buffer[1024];
-    while (42) {
-        nb_read = read(src, buffer, 1024);
-        write(dest, buffer, nb_read);
-    }
-    return -1;
-}
+// int recopie(int src, int dest) {
+//     int nb_read;
+//     char buffer[1024];
+//     while (42) {
+//         nb_read = read(src, buffer, 1024);
+//         write(dest, buffer, nb_read);
+//     }
+//     return -1;
+// }
 
 int tun_alloc(char *dev) {
     struct ifreq ifr;
