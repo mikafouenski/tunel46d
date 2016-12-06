@@ -86,9 +86,12 @@ int ext_in(char* hote, char* port, int tun) {
     fprintf(stderr,"le n° de la socket est : %i\n", srv_soc);
 
     // connect
-    if (connect(srv_soc, resol->ai_addr, sizeof (struct sockaddr_in6)) < 0) {
+    int cpt = 0;
+    while (connect(srv_soc, resol->ai_addr, sizeof (struct sockaddr_in6)) < 0) {
         perror("connect");
-        return (EXIT_FAILURE);
+        printf("tentative %d de connexion\n", cpt++);
+        if (cpt >=  100) exit(EXIT_FAILURE);
+        sleep(1);
     }
     freeaddrinfo(resol); /* /!\ Libération mémoire */
     fprintf(stderr,"connect!\n");
