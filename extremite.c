@@ -97,24 +97,35 @@ int ext_in(char* hote, char* port, int tun) {
 }
 
 int main(int argc, char *argv[]) {
-    if (argc < 3) {
-        printf("Tapez 1: ext_out\nTapez 2: ext_in\nSinon faites l'étoile !\n");
+    if (argc < 5) {
+        printf("usage: %s tunname ipdest portdest portsrc\n", argv[0]);
         return (EXIT_SUCCESS);
     }
-    if (atoi(argv[1]) == 1) {
-        int tun = tun_alloc(argv[2]);
-        printf("Tunnel créé.\n");
-        system("./configure-tun.sh");
-        printf("Tunnel configuré.\n");
-        ext_out("1234", tun);
-    } else if (atoi(argv[1]) == 2) {
-        int tun = tun_alloc(argv[2]);
-        printf("Tunnel créé.\n");
-        system("./configure-tun.sh");
-        printf("Tunnel configuré.\n");
-        ext_in("fc00:1234:2::36", "1234", tun);
-    } else
-        printf("Vous avez fait l'étoile !\n");
+    int tun = tun_alloc(argv[1]);
+    printf("Tunnel créé.\n");
+    system("./configure-tun.sh");
+    printf("Tunnel configuré.\n");
+    int pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        exit(EXIT_FAILURE);
+    }
+    if (pid == 0) { // Le fils
+        ext_in(argv[2], argv[3], tun);
+        exit(EXIT_SUCCESS);
+    }
+    //Le pere
+    ext_out(argv[4], tun);
+
+    //     ext_out("1234", tun);
+    // } else if (atoi(argv[1]) == 2) {
+    //     int tun = tun_alloc(argv[2]);
+    //     printf("Tunnel créé.\n");
+    //     system("./configure-tun.sh");
+    //     printf("Tunnel configuré.\n");
+    //     ext_in("fc00:1234:2::36", "1234", tun);
+    // } else
+    //     printf("Vous avez fait l'étoile !\n");
 
     return 0;
 }
