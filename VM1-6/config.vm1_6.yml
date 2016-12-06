@@ -17,6 +17,8 @@
 
     - shell: nmcli connection add ifname eth1 con-name ansible-eth1 type ethernet ip4 172.16.2.156/28 gw4 172.16.2.151
 
+    - shell: sudo ip route add 172.16.2.0/28 via 172.16.2.1
+
     - shell: nmcli connection add ifname eth2 con-name ansible-eth2 type ethernet ip6 fc00:1234:1::16/64 gw6 fc00:1234:1::26
 
     - sysctl: name="net.ipv4.ip_forward" value=1 sysctl_set=yes state=present reload=yes

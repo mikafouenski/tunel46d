@@ -1,7 +1,7 @@
 #include "extremite.h"
 #include "tunalloc.h"
 
-int ext_out(char* port) {
+int ext_out(char* port, int tun) {
     int srv_soc;
     struct addrinfo * resol; /* résolution */
     struct addrinfo indic = {AI_PASSIVE, /* Toute interface */
@@ -59,10 +59,7 @@ int ext_out(char* port) {
             perror("accept");
             return (EXIT_FAILURE);
         }
-        while (42) {
-          nb_read = read(new_soc, buffer, BUFFSIZE);
-          write(1, buffer, nb_read);
-        }
+        recopie(new_soc, tun);
     }
     return -1;
 }
@@ -96,10 +93,7 @@ int ext_in(char* hote, char* port, int tun) {
     freeaddrinfo(resol); /* /!\ Libération mémoire */
     fprintf(stderr,"connect!\n");
     int nb_read;
-    while (42) {
-        nb_read = read(tun, buffer, BUFFSIZE);
-        write(srv_soc, buffer, nb_read);
-    }
+    recopie(tun, srv_soc);
 }
 
 int main(int argc, char *argv[]) {
@@ -107,16 +101,19 @@ int main(int argc, char *argv[]) {
         printf("Tapez 1: ext_out\nTapez 2: ext_in\nSinon faites l'étoile !\n");
         return (EXIT_SUCCESS);
     }
-    if (atoi(argv[1]) == 1)
-        ext_out("1234");
-    else if (atoi(argv[1]) == 2) {
+    if (atoi(argv[1]) == 1) {
+        int tun = tun_alloc(argv[2]);
+        printf("Tunnel créé.\n");
+        system("./configure-tun.sh");
+        printf("Tunnel configuré.\n");
+        ext_out("1234", tun);
+    } else if (atoi(argv[1]) == 2) {
         int tun = tun_alloc(argv[2]);
         printf("Tunnel créé.\n");
         system("./configure-tun.sh");
         printf("Tunnel configuré.\n");
         ext_in("fc00:1234:2::36", "1234", tun);
-    }
-    else
+    } else
         printf("Vous avez fait l'étoile !\n");
 
     return 0;

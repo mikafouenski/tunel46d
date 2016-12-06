@@ -12,7 +12,7 @@
 
 #define BUFFSIZE 4096
 
-int ext_out(char* port);
+int ext_out(char* port, int tun);
 int ext_in(char* hote, char* port, int tun);
 
 #endif
