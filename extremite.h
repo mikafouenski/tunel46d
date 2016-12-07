@@ -9,6 +9,7 @@
 #include <string.h>
 #include <netdb.h>
 #include <errno.h>
+#include <signal.h>
 
 #define BUFFSIZE 4096
 

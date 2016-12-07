@@ -31,15 +31,6 @@ struct addrinfo* get_info(char* node, char* service, struct addrinfo* hints) {
     return servinfo;
 }
 
-void make_multi_socket(int soc) {
-    int opt = 1;
-    if (setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
-    printf("Multi socket.\n");
-}
-
 void try_connect(int soc, struct sockaddr* addr, socklen_t size) {
     int cpt = 2;
     printf("Connect attempt: 1");
@@ -47,9 +38,9 @@ void try_connect(int soc, struct sockaddr* addr, socklen_t size) {
         printf(" %d", cpt++);
         if (cpt > 30) {
             fprintf(stderr, "Fail connect...\n");
-            exit(EXIT_FAILURE);
+            exit (EXIT_FAILURE);
         }
-        sleep(1);
+        sleep(2);
     }
     printf("\nConnected.\n");
 }
@@ -75,17 +66,14 @@ void ext_out(char* port, int tun) {
     };
     struct addrinfo * servinfo = get_info(NULL, port, &indic);
     int srv_soc = create_socket(servinfo);
-    // rendre la socket multi connexion
     bind_listen(srv_soc, servinfo->ai_addr, sizeof (struct sockaddr_in6));
     freeaddrinfo(servinfo);
     int new_soc;
-    while (42) {
-        if ((new_soc = accept(srv_soc, (struct sockaddr*)&address, (socklen_t*)&addresslenght)) < 0) {
-            perror("accept");
-            exit(EXIT_FAILURE);
-        }
-        recopy(new_soc, tun);
+    if ((new_soc = accept(srv_soc, (struct sockaddr*)&address, (socklen_t*)&addresslenght)) < 0) {
+        perror("accept");
+        exit(EXIT_FAILURE);
     }
+    recopy(new_soc, tun);
 }
 
 void ext_in(char* hote, char* port, int tun) {
@@ -96,27 +84,86 @@ void ext_in(char* hote, char* port, int tun) {
     recopy(tun, srv_soc);
 }
 
+const char* getfield(char* line, int num) {
+    const char* tok;
+    for (tok = strtok(line, "="); tok && *tok; tok = strtok(NULL, "=\n"))
+        if (!--num)
+            return tok;
+    return NULL;
+}
+
+int son;
+void int_handler(int blop) {
+    printf("Ctrl+c detected.\n");
+    kill(son, SIGINT);
+    exit (EXIT_SUCCESS);
+}
+
 int main(int argc, char *argv[]) {
-    if (argc < 5) {
-        printf("usage: %s tunname ipdest portdest portsrc\n", argv[0]);
-        return (EXIT_SUCCESS);
+    if (argc < 2) {
+        printf("usage: %s configfile\n", argv[0]);
+        return (EXIT_FAILURE);
     }
-    int tun = tun_alloc(argv[1]);
+
+    char* tun_name;
+    char* in_ip;
+    char* in_port;
+    char* out_ip;
+    char* out_port;
+
+    FILE *f = fopen(argv[1], "r");
+    if (f == NULL) {
+        perror("fopen");
+        return (EXIT_FAILURE);
+    }
+    char line[128];
+    while (fgets(line, 128, f)) {
+        if (!strchr(line, '#')) {
+            char * pline1 = strdup(line);
+            char * pline2 = strdup(line);
+            const char * key = getfield(pline1, 1);
+            const char * value = getfield(pline2, 2);
+            if (strcmp(key, "tun") == 0) {
+                tun_name = strdup(value);
+            } else if (strcmp(key, "inip") == 0) {
+                in_ip = strdup(value);
+            } else if (strcmp(key, "inport") == 0) {
+                in_port = strdup(value);
+            } else if (strcmp(key, "outip") == 0) {
+                out_ip = strdup(value);
+            } else if (strcmp(key, "outport") == 0) {
+                out_port = strdup(value);
+            } else {
+                printf("unknown config\n");
+            }
+            free(pline1);
+            free(pline2);
+        }
+    }
+    fclose(f);
+
+    int tun = tun_alloc(tun_name);
     printf("Created tunnel.\n");
     system("/mnt/partage/configure-tun.sh");
     printf("Configured tunnel.\n");
     printf("Fork.\n");
-    int pid = fork();
-    if (pid < 0) {
+    son = fork();
+    if (son < 0) {
         perror("fork");
         exit(EXIT_FAILURE);
     }
-    if (pid == 0) { // Le fils
-        ext_in(argv[2], argv[3], tun);
-        exit(EXIT_SUCCESS);
+    if (son == 0) { // Le fils
+        ext_in(out_ip, out_port, tun);
     }
     //Le pere
-    ext_out(argv[4], tun);
+    signal(SIGINT, int_handler);
+    ext_out(in_port, tun);
 
-    return 0;
+    free(tun_name);
+    free(in_ip);
+    free(in_port);
+    free(out_ip);
+    free(out_port);
+
+    return (EXIT_SUCCESS);
 }

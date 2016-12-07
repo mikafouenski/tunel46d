@@ -1,0 +1,8 @@
+# tunnel
+tun=tun0
+# local
+inip=fc00:1234:2::36
+inport=1235
+# distant
+outip=fc00:1234:1::16
+outport=1234
